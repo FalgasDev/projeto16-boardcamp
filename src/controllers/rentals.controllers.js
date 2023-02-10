@@ -37,6 +37,13 @@ export async function rentalInsert(req, res) {
 	if (customer.rowCount === 0 || game.rowCount === 0)
 		return res.sendStatus(400);
 
+	if (game.rows[0].stockTotal === 0)
+		return res
+			.status(400)
+			.send(
+				'Esse jogo não tem unidades o suficente para aluguel neste momento.'
+			);
+
 	await db.query(
 		`
     INSERT INTO 

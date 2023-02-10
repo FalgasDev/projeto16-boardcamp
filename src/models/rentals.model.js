@@ -1,7 +1,7 @@
 import Joi from "joi"
 
 export const createRentalModel = Joi.object({
-  customerId: Joi.number(),
-  gameId: Joi.number(),
-  daysRented: Joi.number().min(1)
+  customerId: Joi.number().min(1).required(),
+  gameId: Joi.number().min(1).required(),
+  daysRented: Joi.number().min(1).required()
 })

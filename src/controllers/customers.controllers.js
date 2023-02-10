@@ -18,7 +18,7 @@ export async function getCustomerById(req, res) {
 
     if (customer.rowCount === 0) res.sendStatus(404)
 
-    res.send(customer.rows)
+    res.send(customer.rows[0])
   } catch (err) {
     res.status(500).send(err.message)
   }

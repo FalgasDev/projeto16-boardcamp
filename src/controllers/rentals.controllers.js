@@ -57,5 +57,7 @@ export async function rentalInsert(req, res) {
 		[customerId, gameId, rentDate, daysRented, null, originalPrice, null]
 	);
 
+	await db.query(`UPDATE games SET "stockTotal" = $1 WHERE id = $2`, [game.rows[0].stockTotal - 1, gameId])
+
 	res.sendStatus(201);
 }

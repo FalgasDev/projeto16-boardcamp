@@ -61,3 +61,17 @@ export async function rentalInsert(req, res) {
 
 	res.sendStatus(201);
 }
+
+export async function rentalDelete(req, res) {
+	const {id} = req.params
+
+	const rental = await db.query(`SELECT * FROM rentals WHERE id = $1`, [id])
+
+	if (rental.rowCount === 0) return res.status(404).send('Esse aluguel não existe')
+
+	if (rental.rows[0].returnDate === null) return res.status(400).send('Esse aluguel ainda não foi finalizado')
+
+	await db.query(`DELETE FROM rentals WHERE id = $1`, [id])
+
+	res.sendStatus(200)
+}

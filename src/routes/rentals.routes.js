@@ -9,4 +9,6 @@ rentalsRouter.get('/rentals', rentalsList)
 
 rentalsRouter.post('/rentals', validateModel(createRentalModel), rentalInsert)
 
+rentalsRouter.delete('/rentals/:id', )
+
 export default rentalsRouter

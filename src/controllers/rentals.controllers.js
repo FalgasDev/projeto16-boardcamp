@@ -33,11 +33,12 @@ export async function rentalInsert(req, res) {
 		customerId,
 	]);
 	const originalPrice = daysRented * game.rows[0].pricePerDay;
+	const rentalsTotal = await db.query('SELECT * FROM rentals WHERE "gameId" = $1', [game.rows[0].id])
 
 	if (customer.rowCount === 0 || game.rowCount === 0)
 		return res.sendStatus(400);
 
-	if (game.rows[0].stockTotal === 0)
+	if (game.rows[0].stockTotal <= 0 || rentalsTotal.rowCount >= game.rows[0].stockTotal)
 		return res
 			.status(400)
 			.send(
@@ -69,15 +70,15 @@ export async function rentalReturn(req, res) {
 	const { id } = req.params;
 	const returnDate = dayjs(Date.now());
 	const rental = await db.query('SELECT * FROM rentals WHERE id = $1', [id]);
-	const game = await db.query('SELECT * FROM games WHERE id = $1', [
-		rental.rows[0].gameId,
-	]);
 
 	if (rental.rowCount === 0) return res.sendStatus(404);
 
 	if (rental.rows[0].returnDate !== null)
 		return res.status(400).send('O jogo já foi devolvido');
 
+	const game = await db.query('SELECT * FROM games WHERE id = $1', [
+		rental.rows[0].gameId,
+	]);
 	const delay = returnDate.diff(dayjs(rental.rows[0].rentDate), 'day');
 
 	if (delay > rental.rows[0].daysRented) {

@@ -57,21 +57,63 @@ export async function rentalInsert(req, res) {
 		[customerId, gameId, rentDate, daysRented, null, originalPrice, null]
 	);
 
-	await db.query(`UPDATE games SET "stockTotal" = $1 WHERE id = $2`, [game.rows[0].stockTotal - 1, gameId])
+	await db.query(`UPDATE games SET "stockTotal" = $1 WHERE id = $2`, [
+		game.rows[0].stockTotal - 1,
+		gameId,
+	]);
 
 	res.sendStatus(201);
 }
 
+export async function rentalReturn(req, res) {
+	const { id } = req.params;
+	const returnDate = dayjs(Date.now());
+	const rental = await db.query('SELECT * FROM rentals WHERE id = $1', [id]);
+	const game = await db.query('SELECT * FROM games WHERE id = $1', [
+		rental.rows[0].gameId,
+	]);
+
+	if (rental.rowCount === 0) return res.sendStatus(404);
+
+	if (rental.rows[0].returnDate !== null)
+		return res.status(400).send('O jogo já foi devolvido');
+
+	const delay = returnDate.diff(dayjs(rental.rows[0].rentDate), 'day');
+
+	if (delay > rental.rows[0].daysRented) {
+		const lateDays = delay - rental.rows[0].daysRented;
+		const delayFee = lateDays * game.rows[0].pricePerDay;
+
+		await db.query('UPDATE rentals SET "delayFee" = $1 WHERE id = $2', [
+			delayFee,
+			id,
+		]);
+	}
+
+	await db.query('UPDATE rentals SET "returnDate" = $1 WHERE id = $2', [
+		returnDate,
+		id,
+	]);
+	await db.query('UPDATE games SET "stockTotal" = $1 WHERE id = $2', [
+		game.rows[0].stockTotal + 1,
+		game.rows[0].id,
+	]);
+
+	res.send('ok');
+}
+
 export async function rentalDelete(req, res) {
-	const {id} = req.params
+	const { id } = req.params;
 
-	const rental = await db.query(`SELECT * FROM rentals WHERE id = $1`, [id])
+	const rental = await db.query(`SELECT * FROM rentals WHERE id = $1`, [id]);
 
-	if (rental.rowCount === 0) return res.status(404).send('Esse aluguel não existe')
+	if (rental.rowCount === 0)
+		return res.status(404).send('Esse aluguel não existe');
 
-	if (rental.rows[0].returnDate === null) return res.status(400).send('Esse aluguel ainda não foi finalizado')
+	if (rental.rows[0].returnDate === null)
+		return res.status(400).send('Esse aluguel ainda não foi finalizado');
 
-	await db.query(`DELETE FROM rentals WHERE id = $1`, [id])
+	await db.query(`DELETE FROM rentals WHERE id = $1`, [id]);
 
-	res.sendStatus(200)
+	res.sendStatus(200);
 }
